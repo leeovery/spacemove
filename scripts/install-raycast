@@ -1,0 +1,46 @@
+#!/bin/bash
+# Builds the Raycast extension into Raycast's extensions folder and tells Raycast it's there,
+# with no dev server left running.
+#
+# `ray build` only compiles. `ray develop` compiles, then tells Raycast by opening
+# raycast://cli/<name>/<event>?cwd=<source folder>&info= links in the background: "start" (after
+# writing cli.pid and an empty dev.log in the output folder), "build-success" after each build,
+# and "stop" (after deleting them) when it quits. That's what imports the extension, and it
+# stays imported after "stop". This sends the same three links, in the same order, around one
+# build (@raycast/api 2.11.1, dist/commands/develop).
+#
+# The links bring Raycast's window up, so they're sent only to import: when Raycast hasn't the
+# extension yet (no build in its folder), or with --import, as after a change to package.json's
+# commands. A plain rebuild needs none: Raycast loads the new build the next time it runs the
+# command.
+set -euo pipefail
+
+source=$(cd "$(dirname "$0")/../raycast" && pwd)
+name=$(node -p 'require(process.argv[1]).name' "$source/package.json")
+output=~/.config/raycast/extensions/$name
+cwd=$(node -p 'encodeURIComponent(process.argv[1])' "$source")
+
+notify() {
+	/usr/bin/open -g -b com.raycast.macos "raycast://cli/$name/$1?cwd=$cwd&info="
+	sleep 1
+}
+
+import=false
+[[ -f $output/package.json && ${1:-} != --import ]] || import=true
+
+cd "$source"
+npm install --silent
+npx ray build -e dev -o "$output"
+
+if [[ $import == false ]]; then
+	echo "Rebuilt $name in $output: Raycast loads it the next time it runs the command"
+	exit 0
+fi
+mkdir -p "$output"
+echo $$ >"$output/cli.pid"
+: >"$output/dev.log"
+notify start
+notify build-success
+rm -f "$output/cli.pid" "$output/dev.log"
+notify stop
+echo "Raycast told about $name, built in $output"

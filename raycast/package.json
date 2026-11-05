@@ -1,0 +1,32 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "spacemove",
+  "title": "Spaces",
+  "description": "Move the focused window to a Space by number or Spaceman label.",
+  "icon": "icon.png",
+  "author": "leeovery",
+  "license": "MIT",
+  "categories": [
+    "Productivity"
+  ],
+  "commands": [
+    {
+      "name": "move-window",
+      "title": "Move Window to Space",
+      "description": "Pick a Space by number or label and send the focused window there.",
+      "mode": "view"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "2.11.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "typescript": "^5.9.0"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop"
+  }
+}
