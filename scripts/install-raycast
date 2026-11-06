@@ -20,8 +20,18 @@ name=$(node -p 'require(process.argv[1]).name' "$source/package.json")
 output=~/.config/raycast/extensions/$name
 cwd=$(node -p 'encodeURIComponent(process.argv[1])' "$source")
 
+# notify sends Raycast one link. On a new Mac the first link is Raycast's first launch, and
+# Raycast can be too busy starting to take one (open fails, -1712: timed out; kit's bootstrap,
+# 6 Nov 2026), so it tries again for half a minute before giving up.
 notify() {
-	/usr/bin/open -g -b com.raycast.macos "raycast://cli/$name/$1?cwd=$cwd&info="
+	local tries=0
+	until /usr/bin/open -g -b com.raycast.macos "raycast://cli/$name/$1?cwd=$cwd&info=" 2>/dev/null; do
+		((++tries < 15)) || {
+			echo "Raycast didn't take the $1 link in half a minute: make raycast-import, once it's open" >&2
+			return 1
+		}
+		sleep 2
+	done
 	sleep 1
 }
 
